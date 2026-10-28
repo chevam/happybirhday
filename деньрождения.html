@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Секретная миссия для Николь</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+  html, body { margin: 0; padding: 0; min-height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    color: #fff; background: #87ceeb;
+    overflow-x: hidden; touch-action: manipulation;
+    user-select: none; -webkit-user-select: none;
+  }
+  #bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; transition: background 2s; }
+  #bg.day { background: linear-gradient(#87ceeb 0%, #b0e0e6 40%, #90ee90 70%, #7ec850 100%); }
+  #bg.sunset { background: linear-gradient(#ff9a56 0%, #ffcc70 35%, #ffe29a 60%, #7ec850 100%); }
+  #bg.night { background: linear-gradient(#0b1026 0%, #1b2a4a 45%, #2a3f5f 70%, #1a2a1a 100%); }
+  .sun {
+    position: absolute; top: 8%; right: 12%; width: 90px; height: 90px; border-radius: 50%;
+    background: radial-gradient(circle, #fff6a0, #ffd166 60%, #ffb300);
+    box-shadow: 0 0 40px #ffd166; transition: transform 0.2s, box-shadow 0.2s; z-index: 3;
+  }
+  .mountain {
+    position: absolute; bottom: 35%; width: 0; height: 0;
+    border-left: 120px solid transparent; border-right: 120px solid transparent;
+    border-bottom: 180px solid #6b8e6b;
+  }
+  .mountain.snow::after {
+    content: ''; position: absolute; left: -40px; top: 120px;
+    border-left: 40px solid transparent; border-right: 40px solid transparent;
+    border-bottom: 60px solid #fff;
+  }
+  .cloud {
+    position: absolute; background: #fff; border-radius: 50%; opacity: 0.9;
+    animation: drift linear infinite;
+  }
+  .cloud::before, .cloud::after { content: ''; position: absolute; background: #fff; border-radius: 50%; }
+  .cloud::before { width: 60%; height: 80%; left: 20%; top: -40%; }
+  .cloud::after { width: 50%; height: 70%; left: 50%; top: -30%; }
+  @keyframes drift { from { transform: translateX(-200px); } to { transform: translateX(110vw); } }
+  .bird { position: absolute; width: 20px; height: 10px; animation: fly linear infinite; }
+  .bird::before, .bird::after {
+    content: ''; position: absolute; width: 10px; height: 10px;
+    border-top: 2px solid #333; border-radius: 50%;
+  }
+  .bird::before { left: 0; transform: rotate(-20deg); }
+  .bird::after { right: 0; transform: rotate(20deg); }
+  @keyframes fly { from { transform: translate(-50px,0); } to { transform: translate(110vw,-40px); } }
+  .tree {
+    position: absolute; bottom: 30%; width: 0; height: 0;
+    border-left: 25px solid transparent; border-right: 25px solid transparent;
+    border-bottom: 90px solid #2e7d32; z-index: 2;
+  }
+  .tree::after {
+    content: ''; position: absolute; left: -8px; top: 80px;
+    width: 16px; height: 40px; background: #5d4037;
+  }
+  .flower {
+    position: absolute; bottom: 28%; font-size: 18px;
+    animation: sway 3s ease-in-out infinite; z-index: 2;
+  }
+  @keyframes sway { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+  .animal { position: absolute; bottom: 27%; font-size: 26px; animation: walk 8s linear infinite; z-index: 2; }
+  @keyframes walk {
+    0% { transform: translateX(-60px) scaleX(1); }
+    49% { transform: translateX(60vw) scaleX(1); }
+    50% { transform: translateX(60vw) scaleX(-1); }
+    100% { transform: translateX(-60px) scaleX(-1); }
+  }
+  .river {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 26%;
+    background: linear-gradient(#4fc3f7, #0288d1); opacity: 0.85;
+  }
+  .beach {
+    position: absolute; bottom: 26%; left: 0; width: 30%; height: 6%;
+    background: #f4e2b8; border-radius: 0 40% 0 0;
+  }
+  .boat {
+    position: absolute; bottom: 20%; left: 18%; font-size: 34px;
+    animation: bob 2.5s ease-in-out infinite; z-index: 3;
+  }
+  .person {
+    position: absolute; bottom: 21%; left: 26%; font-size: 26px;
+    animation: bob 2s ease-in-out infinite; z-index: 3;
+  }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  .stars { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 2s; }
+  #bg.night .stars { opacity: 1; }
+  .star {
+    position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%;
+    animation: twinkle 2s ease-in-out infinite;
+  }
+  @keyframes twinkle { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+  #particles { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  .particle { position: absolute; font-size: 14px; opacity: 0.7; animation: floatUp linear infinite; }
+  @keyframes floatUp {
+    from { transform: translateY(110vh) rotate(0deg); opacity: 0.8; }
+    to { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+  }
+  .topbar {
+    position: fixed; top: calc(10px + env(safe-area-inset-top)); left: 10px; z-index: 30;
+    display: flex; gap: 6px; flex-wrap: wrap; max-width: 95vw;
+  }
+  .topbar button {
+    background: #ffd166; color: #1e1e2f; border: none;
+    padding: 8px 12px; border-radius: 10px; font-weight: bold;
+    cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    font-size: 14px; transition: transform 0.15s;
+  }
+  .topbar button:active { transform: scale(0.95); }
+  #exitBtn { background: #ef476f; color: #fff; position: relative; transition: left 0.25s, top 0.25s, transform 0.15s; }
+  #exitBtn.fleeing { position: fixed; }
+  #exitMsg {
+    position: fixed; top: calc(60px + env(safe-area-inset-top)); left: 10px; z-index: 31;
+    background: #ef476f; color: #fff; padding: 8px 12px;
+    border-radius: 10px; font-size: 14px; display: none; max-width: 260px;
+  }
+  .progress-wrap {
+    position: fixed; top: calc(10px + env(safe-area-inset-top)); right: 10px; z-index: 30;
+    width: 150px; background: rgba(30,30,47,0.7);
+    border-radius: 10px; padding: 6px 8px; font-size: 12px;
+  }
+  .progress-bar { height: 8px; background: #444; border-radius: 6px; margin-top: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0; background: #ffd166; transition: width 0.4s; border-radius: 6px; }
+  .game {
+    position: relative; z-index: 5; max-width: 760px;
+    margin: 100px auto 30px; background: rgba(30,30,47,0.9);
+    border-radius: 18px; padding: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  }
+  h1, h2 { color: #ffd166; margin-top: 0; }
+  .btn {
+    background: #ffd166; color: #1e1e2f; border: none;
+    padding: 12px 18px; border-radius: 10px; font-weight: bold;
+    cursor: pointer; margin: 6px 4px; transition: 0.2s; font-size: 15px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { background: #555; color: #aaa; }
+  .panel { background: rgba(20,20,35,0.85); border-radius: 12px; padding: 14px; margin-top: 12px; }
+  input[type="text"], input[type="password"] {
+    padding: 12px; border-radius: 8px; border: 1px solid #555;
+    background: #1e1e2f; color: #fff; width: 100%; font-size: 16px;
+    -webkit-appearance: none;
+  }
+  .note {
+    background: #3a3a55; border-left: 4px solid #ffd166;
+    padding: 10px 14px; border-radius: 8px; margin: 10px 0;
+  }
+  .hidden { display: none !important; }
+  .status { margin-top: 10px; color: #9ad; font-size: 14px; min-height: 18px; }
+  .center { text-align: center; }
+  .grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    max-width: 320px; margin: 12px auto;
+  }
+  .card {
+    background: #ffd166; color: #1e1e2f; font-size: 22px; font-weight: bold;
+    text-align: center; padding: 18px 0; border-radius: 10px;
+    cursor: pointer; user-select: none;
+  }
+  .card.flipped { background: #4caf50; color: #fff; }
+  .card.matched { background: #2e7d32; color: #fff; cursor: default; }
+  .quiz-option { display: block; width: 100%; text-align: left; margin: 6px 0; }
+  .mine-grid {
+    display: grid; grid-template-columns: repeat(8, 1fr);
+    gap: 3px; width: 100%; max-width: 360px; margin: 12px auto;
+  }
+  .mine-cell {
+    aspect-ratio: 1 / 1; background: #4caf50;
+    border-radius: 5px; display: flex; align-items: center;
+    justify-content: center; font-weight: bold;
+    font-size: clamp(10px, 3vw, 16px);
+    cursor: pointer; user-select: none; color: #1e1e2f;
+  }
+  .mine-cell.revealed { background: #9ad; }
+  .mine-cell.flag { background: #ffd166; }
+  .mine-cell.mine { background: #ef476f; color: #fff; }
+  .diff-wrap {
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 12px 0;
+  }
+  .diff-pic {
+    position: relative; width: 48%; min-width: 140px; aspect-ratio: 4/3;
+    background: linear-gradient(#87ceeb, #90ee90);
+    border-radius: 10px; overflow: hidden; border: 2px solid #555;
+  }
+  .diff-pic .dp {
+    position: absolute; font-size: 18px; user-select: none;
+  }
+  .diff-pic.right .diff-target {
+    cursor: pointer; transition: transform 0.2s, filter 0.2s;
+  }
+  .diff-pic.right .diff-target.found {
+    filter: drop-shadow(0 0 8px #ffd166); transform: scale(1.25);
+  }
+  .puzzle {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    max-width: 270px; margin: 12px auto;
+  }
+  .puzzle-tile {
+    height: 80px; background: #ffd166; color: #1e1e2f;
+    font-size: 24px; font-weight: bold; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; user-select: none; transition: background 0.2s;
+  }
+  .puzzle-tile.empty { background: #333; cursor: default; }
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-content {
+    background: #26263a; padding: 22px; border-radius: 16px;
+    max-width: 460px; width: 100%; color: #fff; max-height: 85vh; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .modal-content h3 { color: #ffd166; margin-top: 0; }
+  .confetti {
+    position: fixed; top: -20px; font-size: 20px; z-index: 50;
+    animation: fall linear forwards; pointer-events: none;
+  }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+  
+  /* ВОДЯНОЙ ЗНАК */
+  .watermark {
+    position: fixed; bottom: calc(15px + env(safe-area-inset-bottom)); right: 15px;
+    color: rgba(255, 255, 255, 0.4); font-size: 14px; font-weight: bold;
+    z-index: 25; user-select: none; -webkit-user-select: none;
+    cursor: pointer; letter-spacing: 1px; padding: 5px;
+  }
+
+  @media (max-width: 480px) {
+    .game { margin: 120px 8px 20px; padding: 14px; }
+    .progress-wrap { width: 120px; top: calc(50px + env(safe-area-inset-top)); }
+    .puzzle-tile { height: 64px; font-size: 20px; }
+    .topbar button { padding: 7px 10px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="bg" class="day">
+  <div class="river"></div>
+  <div class="beach"></div>
+  <div class="sun" id="sun"></div>
+  <div class="stars" id="stars"></div>
+  <div class="mountain" style="left:2%;"></div>
+  <div class="mountain" style="left:18%; border-bottom-color:#7fa07f;"></div>
+  <div class="mountain snow" style="left:36%;"></div>
+  <div class="mountain" style="left:56%; border-bottom-color:#5f7f5f;"></div>
+  <div class="mountain snow" style="left:74%;"></div>
+  <div class="tree" style="left:9%;"></div>
+  <div class="tree" style="left:13%; border-bottom-color:#3a8a3a;"></div>
+  <div class="tree" style="left:68%;"></div>
+  <div class="tree" style="left:72%; border-bottom-color:#3a8a3a;"></div>
+  <div class="flower" style="left:32%;">🌼</div>
+  <div class="flower" style="left:36%;">🌷</div>
+  <div class="flower" style="left:44%;">🌸</div>
+  <div class="flower" style="left:52%;">🌻</div>
+  <div class="flower" style="left:58%;">🌺</div>
+  <div class="animal" style="left:5%; animation-duration:12s;">🐄</div>
+  <div class="animal" style="left:30%; animation-duration:15s; animation-delay:2s;">🐑</div>
+  <div class="animal" style="left:55%; animation-duration:18s; animation-delay:1s;">🐄</div>
+  <div class="animal" style="left:75%; animation-duration:14s; animation-delay:3s;">🐑</div>
+  <div class="boat" id="boat">⛵</div>
+  <div class="person" id="person">🧍</div>
+</div>
+<div id="particles"></div>
+
+<div class="watermark" id="watermark">che_vam</div>
+
+<div class="topbar">
+  <button id="exitBtn" onclick="tryExit()">🚪 Выход</button>
+  <button onclick="toggleNotebook()">📒 Блокнот</button>
+  <button id="soundBtn" onclick="toggleSound()">🔊</button>
+</div>
+<div id="exitMsg"></div>
+
+<div class="progress-wrap">
+  <div id="progressText">Миссия 0 из 5</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<div id="notebookModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>📒 Твой блокнот</h3>
+    <div id="notebookList">Пока пусто...</div>
+    <button class="btn" style="margin-top:14px;" onclick="toggleNotebook()">Закрыть</button>
+  </div>
+</div>
+
+<div id="secretModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>🔐 Секретная концовка</h3>
+    <div id="secretContent">
+      <p>Введи все 5 паролей через пробел или запятую:</p>
+      <input type="text" id="passwordInput" placeholder="пароль1 пароль2 ...">
+      <button class="btn" style="margin-top:12px;" onclick="checkPasswords()">Открыть</button>
+      <div id="secretResult" class="note hidden"></div>
+    </div>
+    <button class="btn" style="margin-top:14px; background:#888;" onclick="closeSecret()">Закрыть</button>
+  </div>
+</div>
+
+<div id="adminModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>🛠 Админ-панель</h3>
+    <p>Введите секретный код:</p>
+    <input type="password" id="adminCodeInput" placeholder="код">
+    <button class="btn" style="margin-top:12px;" onclick="checkAdminCode()">Войти</button>
+    <button class="btn" style="margin-top:14px; background:#888;" onclick="closeAdmin()">Отмена</button>
+  </div>
+</div>
+
+<div class="game">
+  <h1 class="center">🎉 Секретная миссия для Николь 🎉</h1>
+
+  <div id="intro">
+    <p>Привет, Николь! Это не просто игра — это маленькое приключение, собранное специально для тебя. 🌏</p>
+    <p>Тебя ждут 5 мини-миссий: шахматы, викторина о Южной Корее, сапёр, «найди отличия» и пятнашки. За каждую ты получишь пароль — он запишется в блокнот (кнопка слева вверху).</p>
+    <p>Потом будет поздравление, а дальше — кое-что секретное. Удачи! 💛</p>
+    <button class="btn" onclick="startGame()">Начать приключение</button>
+  </div>
+
+  <div id="gameArea" class="hidden">
+    <div class="panel">
+      <h2 id="missionTitle"></h2>
+      <div id="missionContent"></div>
+      <div id="missionStatus" class="status"></div>
+    </div>
+  </div>
+
+  <div id="congratsArea" class="hidden panel">
+    <h2>🎂 С днём рождения, Николь! 🎂</h2>
+    <p>Николь, с днём рождения! 💛 Пусть этот год принесёт тебе много радости, тёплых моментов и улыбок. Желаю тебе успехов в учёбе, крутых побед (и в шахматах, и в жизни), верных друзей рядом и исполнения самых заветных желаний. 🌟🎉💜</p>
+    <p>Спасибо, что ты есть. Мне очень нравится с тобой общаться — ты умная, интересная и классная. 😊🌸</p>
+    <p>А теперь... введи пароли в поле, чтобы открыть кое-что секретное. 😉</p>
+    <div id="findStatus" class="status"></div>
+    <button class="btn" onclick="openSecret()" style="margin-top:10px;">🔐 Ввести пароли</button>
+  </div>
+</div>
+
+<script>
+let soundOn = true;
+let audioCtx = null;
+
+function unlockAudio() {
+  if (!audioCtx) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) {}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+document.addEventListener('touchstart', unlockAudio, { once: true });
+document.addEventListener('click', unlockAudio, { once: true });
+
+function beep(freq = 440, dur = 0.08) {
+  if (!soundOn) return;
+  try {
+    if (!audioCtx) unlockAudio();
+    if (!audioCtx) return;
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = freq; o.type = 'sine'; g.gain.value = 0.05;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  } catch(e) {}
+}
+function successSound() { beep(660, 0.1); setTimeout(() => beep(880, 0.15), 100); }
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+}
+
+(function particles() {
+  const wrap = document.getElementById('particles');
+  const emojis = ['🌸','✨','🍃','💛','🌼'];
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    p.style.left = Math.random()*100 + '%';
+    p.style.animationDuration = (8 + Math.random()*10) + 's';
+    p.style.animationDelay = (-Math.random()*15) + 's';
+    wrap.appendChild(p);
+  }
+})();
+
+(function bg() {
+  const bg = document.getElementById('bg');
+  for (let i = 0; i < 5; i++) {
+    const c = document.createElement('div');
+    c.className = 'cloud';
+    c.style.width = (60 + Math.random()*60) + 'px';
+    c.style.height = (24 + Math.random()*20) + 'px';
+    c.style.top = (5 + Math.random()*30) + '%';
+    c.style.animationDuration = (25 + Math.random()*25) + 's';
+    c.style.animationDelay = (-Math.random()*30) + 's';
+    bg.appendChild(c);
+  }
+  for (let i = 0; i < 4; i++) {
+    const b = document.createElement('div');
+    b.className = 'bird';
+    b.style.top = (10 + Math.random()*25) + '%';
+    b.style.animationDuration = (14 + Math.random()*10) + 's';
+    b.style.animationDelay = (-Math.random()*20) + 's';
+    bg.appendChild(b);
+  }
+  const stars = document.getElementById('stars');
+  for (let i = 0; i < 50; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random()*100 + '%';
+    s.style.top = Math.random()*60 + '%';
+    s.style.animationDelay = (Math.random()*2) + 's';
+    stars.appendChild(s);
+  }
+})();
+
+const passwords = [];
+let currentMission = 0;
+let secretUnlocked = false;
+
+const missions = [
+  { title: "Миссия 1: Шахматная память", render: renderChessMemory },
+  { title: "Миссия 2: Викторина о Южной Корее", render: renderKoreaQuiz },
+  { title: "Миссия 3: Сапёр 8×8", render: renderMinesweeper },
+  { title: "Миссия 4: Найди отличия", render: renderDifferences },
+  { title: "Миссия 5: Пятнашки", render: renderPuzzle }
+];
+
+function startGame() {
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('gameArea').classList.remove('hidden');
+  loadMission(0);
+}
+
+function updateProgress() {
+  const total = missions.length, done = passwords.length;
+  document.getElementById('progressText').textContent = `Миссия ${Math.min(done+1, total)} из ${total}`;
+  document.getElementById('progressFill').style.width = (done/total*100) + '%';
+}
+
+function loadMission(index) {
+  currentMission = index;
+  const m = missions[index];
+  document.getElementById('missionTitle').textContent = m.title;
+  document.getElementById('missionContent').innerHTML = '';
+  document.getElementById('missionStatus').textContent = '';
+  updateProgress();
+  m.render();
+}
+
+function addPassword(p) {
+  if (passwords.includes(p)) return;
+  passwords.push(p);
+  updateNotebook();
+  successSound();
+  document.getElementById('missionStatus').textContent = `✅ Получен пароль: ${p}`;
+  if (passwords.length === 3) document.getElementById('bg').className = 'sunset';
+  if (passwords.length === 5) document.getElementById('bg').className = 'night';
+  setTimeout(() => {
+    if (currentMission < missions.length - 1) loadMission(currentMission + 1);
+    else { document.getElementById('gameArea').classList.add('hidden'); showCongrats(); }
+  }, 1200);
+}
+
+function updateNotebook() {
+  const list = document.getElementById('notebookList');
+  list.innerHTML = passwords.length === 0 ? 'Пока пусто...' :
+    passwords.map((p, i) => `<div style="margin:6px 0;">${i+1}. <b>${p}</b></div>`).join('');
+}
+function toggleNotebook() {
+  document.getElementById('notebookModal').classList.toggle('hidden');
+  beep(500);
+}
+
+function renderChessMemory() {
+  const content = document.getElementById('missionContent');
+  content.innerHTML = `<p>Найди все пары шахматных фигур.</p><div class="grid" id="chessGrid"></div>`;
+  const symbols = ['♔','♕','♖','♗','♘','♙','♚','♛'];
+  const cards = [...symbols, ...symbols].sort(() => Math.random() - 0.5);
+  const grid = document.getElementById('chessGrid');
+  let flipped = [], matched = 0, lock = false;
+  cards.forEach((sym) => {
+    const card = document.createElement('div');
+    card.className = 'card'; card.textContent = '?'; card.dataset.symbol = sym;
+    card.onclick = () => {
+      if (lock || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+      beep(600); card.classList.add('flipped'); card.textContent = sym; flipped.push(card);
+      if (flipped.length === 2) {
+        lock = true;
+        if (flipped[0].dataset.symbol === flipped[1].dataset.symbol) {
+          flipped[0].classList.add('matched'); flipped[1].classList.add('matched');
+          matched++; flipped = []; lock = false;
+          if (matched === symbols.length) addPassword('ШАХМАТЫ');
+        } else {
+          setTimeout(() => {
+            flipped.forEach(c => { c.classList.remove('flipped'); c.textContent = '?'; });
+            flipped = []; lock = false;
+          }, 700);
+        }
+      }
+    };
+    grid.appendChild(card);
+  });
+}
+
+function renderKoreaQuiz() {
+  const content = document.getElementById('missionContent');
+  const questions = [
+    { q: "Как называется столица Южной Кореи?", a: ["Сеул", "Пусан", "Токио", "Пхеньян"], correct: 0 },
+    { q: "Какое блюдо — символ корейской кухни?", a: ["Кимчи", "Суши", "Паэлья", "Пицца"], correct: 0 },
+    { q: "Какой праздник отмечают 28 октября?", a: ["День рождения", "Хэллоуин", "Чусок", "Сольналь"], correct: 0 },
+    { q: "Какая гора — самая известная в Южной Корее?", a: ["Халласан", "Сораксан", "Фудзи", "Эверест"], correct: 0 }
+  ];
+  let current = 0;
+  const area = document.createElement('div');
+  content.innerHTML = ''; content.appendChild(area);
+  const status = document.getElementById('missionStatus');
+  function renderQ() {
+    if (current >= questions.length) { addPassword('КОРЕЯ'); return; }
+    const q = questions[current];
+    area.innerHTML = `<p><b>${current+1}/${questions.length}.</b> ${q.q}</p>`;
+    q.a.forEach((opt, i) => {
+      const b = document.createElement('button');
+      b.className = 'btn quiz-option'; b.textContent = opt;
+      b.onclick = () => {
+        if (i === q.correct) { status.textContent = ''; beep(700); current++; renderQ(); }
+        else { status.textContent = '❌ Неправильно, попробуй ещё раз!'; beep(200); }
+      };
+      area.appendChild(b);
+    });
+  }
+  renderQ();
+}
+
+function renderMinesweeper() {
+  const content = document.getElementById('missionContent');
+  content.innerHTML = `
+    <div class="panel">
+      <h3>📖 Правила сапёра</h3>
+      <p>Поле 8×8, спрятано 10 мин. Тапни по клетке, чтобы открыть её. Попадёшь на мину — начнёшь заново. Цифра показывает, сколько мин рядом. Кнопка «🚩 Флаг» включает режим флажка. Победа: открыть все безопасные клетки ИЛИ отметить все мины флажками и нажать «✅ Проверить».</p>
+      <button class="btn" onclick="startMinesweeper()">Начать</button>
+    </div>
+    <div id="mineArea"></div>
+  `;
+}
+function startMinesweeper() {
+  const area = document.getElementById('mineArea');
+  const size = 8, minesCount = 10;
+  let mines = new Set();
+  while (mines.size < minesCount) mines.add(Math.floor(Math.random()*size*size));
+  let revealed = new Set(), flags = new Set(), flagMode = false, gameOver = false, won = false;
+  
+  area.innerHTML = `
+    <div class="center" style="margin:8px 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;">
+      <button class="btn" id="flagBtn">🚩 Флаг: выкл</button>
+      <button class="btn" id="hintBtn" style="background: #6fa8dc; color: #fff;">💡 Подсказка (10)</button>
+      <button class="btn" id="checkBtn">✅ Проверить</button>
+    </div>
+    <div class="mine-grid" id="mineGrid"></div>
+  `;
+  
+  const grid = document.getElementById('mineGrid');
+  const flagBtn = document.getElementById('flagBtn');
+  const checkBtn = document.getElementById('checkBtn');
+  const hintBtn = document.getElementById('hintBtn');
+  let hintsLeft = minesCount; // 10 подсказок = 10 бомб
+
+  flagBtn.onclick = () => {
+    flagMode = !flagMode;
+    flagBtn.textContent = flagMode ? '🚩 Флаг: вкл' : '🚩 Флаг: выкл';
+    flagBtn.style.background = flagMode ? '#ef476f' : '#ffd166';
+    flagBtn.style.color = flagMode ? '#fff' : '#1e1e2f';
+  };
+
+  hintBtn.onclick = () => {
+    if (hintsLeft <= 0 || won || gameOver) return;
+    
+    // Ищем незамеченную мину
+    let unmarkedMine = -1;
+    for (let m of mines) {
+      if (!flags.has(m)) { unmarkedMine = m; break; }
+    }
+    
+    if (unmarkedMine !== -1) {
+      flags.add(unmarkedMine);
+      const cell = grid.children[unmarkedMine];
+      cell.classList.add('flag');
+      cell.textContent = '🚩';
+      hintsLeft--;
+      hintBtn.textContent = `💡 Подсказка (${hintsLeft})`;
+      if (hintsLeft === 0) hintBtn.disabled = true;
+      beep(700);
+      checkWin();
+    } else {
+      hintBtn.textContent = '💡 Все мины уже отмечены';
+      hintBtn.disabled = true;
+    }
+  };
+
+  function neighbors(idx) {
+    const r = Math.floor(idx/size), c = idx%size, res = [];
+    for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) {
+      if (dr===0 && dc===0) continue;
+      const nr = r+dr, nc = c+dc;
+      if (nr>=0 && nr<size && nc>=0 && nc<size) res.push(nr*size+nc);
+    }
+    return res;
+  }
+  function countMines(idx) { return neighbors(idx).filter(n => mines.has(n)).length; }
+  
+  function checkWin() {
+    if (won) return;
+    const allMinesFlagged = [...mines].every(m => flags.has(m)) && flags.size === mines.size;
+    const allSafeRevealed = revealed.size === size*size - minesCount;
+    if (allMinesFlagged || allSafeRevealed) {
+      won = true;
+      document.getElementById('missionStatus').textContent = '✅ Победа!';
+      addPassword('САПЁР');
+    }
+  }
+
+  checkBtn.onclick = () => {
+    if (gameOver || won) return;
+    const allMinesFlagged = [...mines].every(m => flags.has(m)) && flags.size === mines.size;
+    if (allMinesFlagged) {
+      checkWin();
+    } else {
+      document.getElementById('missionStatus').textContent = 'Ещё не все мины отмечены. Отметь все мины флажками или открой все безопасные клетки.';
+      beep(200);
+    }
+  };
+
+  function reveal(idx) {
+    if (revealed.has(idx) || flags.has(idx) || won || gameOver) return;
+    revealed.add(idx);
+    const cell = grid.children[idx];
+    cell.classList.add('revealed');
+    if (mines.has(idx)) {
+      gameOver = true; cell.classList.add('mine'); cell.textContent = '💥'; beep(150);
+      document.getElementById('missionStatus').textContent = '💥 Мина! Начинаем заново...';
+      setTimeout(() => startMinesweeper(), 1200); return;
+    }
+    const cnt = countMines(idx);
+    cell.textContent = cnt > 0 ? cnt : '';
+    beep(500);
+    if (cnt === 0) neighbors(idx).forEach(reveal);
+    checkWin();
+  }
+  for (let i = 0; i < size*size; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'mine-cell';
+    cell.onclick = () => {
+      if (gameOver || revealed.has(i) || won) return;
+      if (flagMode) {
+        if (flags.has(i)) { flags.delete(i); cell.classList.remove('flag'); cell.textContent = ''; }
+        else { flags.add(i); cell.classList.add('flag'); cell.textContent = '🚩'; }
+        beep(400);
+        checkWin();
+      } else reveal(i);
+    };
+    grid.appendChild(cell);
+  }
+}
+
+function renderDifferences() {
+  const content = document.getElementById('missionContent');
+  content.innerHTML = `
+    <p>Слева и справа — почти одинаковые картинки. Найди 5 отличий на правой и тапни по ним.</p>
+    <div class="diff-wrap">
+      <div class="diff-pic" id="diffLeft"></div>
+      <div class="diff-pic right" id="diffRight"></div>
+    </div>
+    <div class="status" id="diffStatus">Найдено: 0 / 5</div>
+  `;
+  const left = document.getElementById('diffLeft');
+  const right = document.getElementById('diffRight');
+  const status = document.getElementById('diffStatus');
+  const base = [
+    { e:'⛰️', x:10, y:70 }, { e:'🌳', x:25, y:60 }, { e:'🌳', x:70, y:60 },
+    { e:'🌸', x:40, y:80 }, { e:'🌼', x:55, y:80 }, { e:'⛵', x:80, y:85 },
+    { e:'☀️', x:80, y:10 }, { e:'🐑', x:15, y:85 }
+  ];
+  function add(el, item) {
+    const d = document.createElement('div');
+    d.className = 'dp';
+    d.textContent = item.e;
+    d.style.left = item.x + '%';
+    d.style.top = item.y + '%';
+    el.appendChild(d);
+    return d;
+  }
+  base.forEach(it => add(left, it));
+  base.forEach((it, i) => {
+    if (i === 2 || i === 4 || i === 5 || i === 6 || i === 7) {
+      if (i === 2) add(right, { e:'🌳', x:70, y:60 });
+      if (i === 4) add(right, { e:'🌷', x:55, y:80 });
+      if (i === 5) { const d = add(right, { e:'⛵', x:80, y:85 }); d.style.transform = 'scaleX(-1)'; d.classList.add('diff-target'); d.dataset.diff = 'boat'; d.onclick = () => foundDiff(d, 'boat'); }
+      if (i === 6) add(right, { e:'☀️', x:80, y:10 });
+      if (i === 7) add(right, { e:'🐄', x:15, y:85 });
+      return;
+    }
+    if (i === 1) { add(right, it); return; }
+    add(right, it);
+  });
+  const extra = [
+    { e:'🌳', x:90, y:60, key:'tree' },
+    { e:'☁️', x:50, y:10, key:'cloud' }
+  ];
+  extra.forEach(it => {
+    const d = add(right, { e:it.e, x:it.x, y:it.y });
+    d.classList.add('diff-target');
+    d.dataset.diff = it.key;
+    d.onclick = () => foundDiff(d, it.key);
+  });
+  const rightItems = [...right.children];
+  rightItems.forEach(child => {
+    if (child.dataset.diff) return;
+    if (child.textContent === '🌷' || child.textContent === '🐄') {
+      child.classList.add('diff-target');
+      child.dataset.diff = child.textContent === '🌷' ? 'flower' : 'cow';
+      child.onclick = () => foundDiff(child, child.dataset.diff);
+    }
+  });
+
+  const found = new Set();
+  function foundDiff(el, key) {
+    if (found.has(key)) return;
+    found.add(key);
+    el.classList.add('found');
+    status.textContent = `Найдено: ${found.size} / 5`;
+    beep(650);
+    if (found.size >= 5) addPassword('ОТЛИЧИЯ');
+  }
+}
+
+function renderPuzzle() {
+  const content = document.getElementById('missionContent');
+  content.innerHTML = `
+    <p>Собери пятнашки: числа по порядку, пустая клетка — в правом нижнем углу. После 100 ходов без победы появится подсказка.</p>
+    <div class="puzzle" id="puzzle"></div>
+    <div class="status" id="puzzleStatus">Ходов: 0 · Подсказок: 0</div>
+  `;
+  const size = 3;
+  let tiles = [1,2,3,4,5,6,7,8,0];
+  for (let i = 0; i < 200; i++) {
+    const empty = tiles.indexOf(0);
+    const r = Math.floor(empty/size), c = empty%size, moves = [];
+    if (r>0) moves.push(empty-size);
+    if (r<size-1) moves.push(empty+size);
+    if (c>0) moves.push(empty-1);
+    if (c<size-1) moves.push(empty+1);
+    const m = moves[Math.floor(Math.random()*moves.length)];
+    [tiles[empty], tiles[m]] = [tiles[m], tiles[empty]];
+  }
+  let moves = 0, hints = 0;
+  const puzzle = document.getElementById('puzzle');
+  const status = document.getElementById('puzzleStatus');
+  let solved = false;
+
+  function isSolved() {
+    return tiles.every((v, idx) => v === (idx+1) % 9);
+  }
+  function updateStatus() {
+    status.textContent = `Ходов: ${moves} · Подсказок: ${hints}`;
+  }
+  function giveHint() {
+    if (solved) return;
+    for (let target = 1; target <= 8; target++) {
+      const pos = tiles.indexOf(target);
+      const correctPos = target - 1;
+      if (pos !== correctPos) {
+        const empty = tiles.indexOf(0);
+        if (Math.abs(pos - empty) === 1 || Math.abs(pos - empty) === size) {
+          [tiles[empty], tiles[pos]] = [tiles[pos], tiles[empty]];
+        } else {
+          const er = Math.floor(empty/size), ec = empty%size;
+          const pr = Math.floor(pos/size), pc = pos%size;
+          let next = empty;
+          if (er !== pr) next = empty + (pr > er ? size : -size);
+          else if (ec !== pc) next = empty + (pc > ec ? 1 : -1);
+          [tiles[empty], tiles[next]] = [tiles[next], tiles[empty]];
+        }
+        moves++; hints++;
+        updateStatus(); render(); beep(800);
+        return;
+      }
+    }
+  }
+  function render() {
+    puzzle.innerHTML = '';
+    tiles.forEach((t, i) => {
+      const el = document.createElement('div');
+      el.className = 'puzzle-tile' + (t === 0 ? ' empty' : '');
+      el.textContent = t === 0 ? '' : t;
+      el.onclick = () => {
+        if (solved) return;
+        const empty = tiles.indexOf(0);
+        const r = Math.floor(empty/size), c = empty%size;
+        const tr = Math.floor(i/size), tc = i%size;
+        if (Math.abs(r-tr) + Math.abs(c-tc) === 1) {
+          [tiles[empty], tiles[i]] = [tiles[i], tiles[empty]];
+          moves++;
+          updateStatus();
+          beep(600);
+          render();
+          if (isSolved() && !solved) {
+            solved = true;
+            addPassword('ПЯТНАШКИ');
+          }
+        }
+      };
+      puzzle.appendChild(el);
+    });
+    if (!solved && moves > 0 && moves % 100 === 0) giveHint();
+  }
+  render();
+}
+
+function showCongrats() {
+  document.getElementById('congratsArea').classList.remove('hidden');
+  document.getElementById('progressText').textContent = 'Все миссии пройдены!';
+  document.getElementById('progressFill').style.width = '100%';
+  confetti();
+  secretUnlocked = true;
+  document.getElementById('exitBtn').classList.remove('fleeing');
+  document.getElementById('exitBtn').style.position = 'relative';
+  document.getElementById('exitBtn').style.left = 'auto';
+  document.getElementById('exitBtn').style.top = 'auto';
+}
+function confetti() {
+  const emojis = ['🎉','🎂','💛','✨','🌸','🎈'];
+  for (let i = 0; i < 30; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    c.style.left = Math.random()*100 + '%';
+    c.style.animationDuration = (2 + Math.random()*2) + 's';
+    c.style.animationDelay = (Math.random()*1) + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 5000);
+  }
+}
+
+function openSecret() { document.getElementById('secretModal').classList.remove('hidden'); beep(500); }
+function closeSecret() { document.getElementById('secretModal').classList.add('hidden'); }
+function checkPasswords() {
+  const input = document.getElementById('passwordInput').value.toUpperCase();
+  const needed = ['ШАХМАТЫ','КОРЕЯ','САПЁР','ОТЛИЧИЯ','ПЯТНАШКИ'];
+  const entered = input.split(/[\s,]+/).filter(Boolean);
+  const result = document.getElementById('secretResult');
+  result.classList.remove('hidden');
+  const allPresent = needed.every(p => entered.includes(p));
+  const noExtra = entered.every(p => needed.includes(p));
+  if (allPresent && noExtra && entered.length === needed.length) {
+    result.innerHTML = `
+      <h2>💛 Секретная концовка 💛</h2>
+      <p>Николь, ты прошла всё приключение и собрала все пароли. Это было небольшое путешествие — как маленький подарок от меня. 🌸</p>
+      <p>Мы общаемся недавно, но мне с тобой очень интересно и тепло. 😊</p>
+      <p><b>Ты мне нравишься. 💛</b> Не как отличница или собеседник — а по-настоящему. Если ты чувствуешь что-то похожее — дай знать. Я буду очень рад. 😊🌸</p>
+      <p>— che_vam</p>
+    `;
+    successSound(); confetti();
+  } else {
+    result.innerHTML = '<p>❌ Что-то пошло не так. Открой блокнот (кнопка слева вверху) и проверь все пароли. Их должно быть ровно 5, без лишних слов.</p>';
+    beep(200);
+  }
+}
+
+function tryExit() {
+  if (secretUnlocked) {
+    if (confirm('Выйти из игры?')) {
+      document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1e1e2f;color:#ffd166;font-size:24px;text-align:center;padding:20px;">Спасибо за игру, Николь! 💛<br>— che_vam</div>';
+    }
+    return;
+  }
+  const btn = document.getElementById('exitBtn');
+  const msg = document.getElementById('exitMsg');
+  btn.classList.add('fleeing');
+  const maxX = window.innerWidth - 120, maxY = window.innerHeight - 100;
+  btn.style.left = (Math.random()*maxX) + 'px';
+  btn.style.top = (Math.random()*maxY) + 'px';
+  msg.style.display = 'block';
+  msg.textContent = 'Ты ещё не открыла секретную концовку! 😉';
+  setTimeout(() => { msg.style.display = 'none'; }, 2500);
+  beep(300);
+}
+
+let clickCount = 0;
+let clickTimer = null;
+document.getElementById('watermark').addEventListener('click', () => {
+  clickCount++;
+  if (clickCount === 1) {
+    clickTimer = setTimeout(() => { clickCount = 0; }, 400);
+  } else if (clickCount === 2) {
+    clearTimeout(clickTimer);
+    clickCount = 0;
+    document.getElementById('adminModal').classList.remove('hidden');
+  }
+});
+
+function closeAdmin() {
+  document.getElementById('adminModal').classList.add('hidden');
+  document.getElementById('adminCodeInput').value = '';
+}
+
+function checkAdminCode() {
+  const code = document.getElementById('adminCodeInput').value.toLowerCase();
+  if (code === '2708che_vam' || code === '2708чевам') {
+    closeAdmin();
+    document.getElementById('gameArea').classList.add('hidden');
+    document.getElementById('intro').classList.add('hidden');
+    
+    passwords.length = 0;
+    passwords.push('ШАХМАТЫ', 'КОРЕЯ', 'САПЁР', 'ОТЛИЧИЯ', 'ПЯТНАШКИ');
+    updateNotebook();
+    
+    document.getElementById('bg').className = 'night';
+    showCongrats();
+  } else {
+    alert('Неверный код!');
+  }
+}
+</script>
+</body>
+</html>
